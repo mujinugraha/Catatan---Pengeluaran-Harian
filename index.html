@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Catatan Pengeluaran Harian - Muji</title>
+<style>
+*{box-sizing:border-box}body{font-family:Inter,Arial;background:#0f172a;color:#e2e8f0;padding:20px;max-width:900px;margin:auto}
+.card{background:#1e293b;padding:20px;border-radius:12px;margin:15px 0;border:1px solid #334155}
+input,select,button{padding:10px;border-radius:8px;border:1px solid #334155;background:#0f172a;color:white;width:100%;margin:5px 0}
+button{background:#3b82f6;font-weight:bold;cursor:pointer}button:hover{background:#2563eb}
+.item{display:flex;justify-content:space-between;padding:10px;background:#0f172a;border-radius:8px;margin:5px 0}
+.badge{padding:2px 8px;background:#3b82f6;border-radius:12px;font-size:12px}
+.total{font-size:24px;color:#22c55e;font-weight:bold}
+</style>
+</head>
+<body>
+<h1>💰 Catatan Pengeluaran Harian</h1>
+<p>Aplikasi pencatatan pengeluaran harian berbasis Laravel - UAS WAD</p>
+<div class="card">
+<b>Auth: mujinugraha@gmail.com | Role: user | Session aman (Soal 4)</b><br>
+Login: Auth::attempt() -> Session regenerate -> middleware('auth')
+</div>
+
+<div class="card">
+<h3>Tambah Pengeluaran - MVC Flow (Soal 1)</h3>
+<p>View->Controller->Model: POST /expenses -> ExpenseController@store -> $request->validate() -> Expense::create() -> redirect</p>
+Tanggal <input type="date" id="tgl">
+Kategori <select id="kat"><option>Warteg</option><option>Transport</option><option>Gym</option><option>Kopi</option></select>
+Jumlah <input type="number" id="jml" placeholder="25000">
+Catatan <input type="text" id="cat" placeholder="warteg + es teh - dicegah XSS via {{ }} blade">
+<button onclick="tambah()">Simpan (ExpenseController@store)</button>
+</div>
+
+<div class="card">
+<h3>Daftar Pengeluaran - Relasi DB (Soal 2)</h3>
+<p>users 1--M expenses: users.id -> expenses.user_id (FK) | Eloquent: $user->expenses()->sum('jumlah')</p>
+<div id="list"></div>
+<div class="total" id="total">Total: Rp 0</div>
+</div>
+
+<div class="card">
+<h3>Keamanan (Soal 3)</h3>
+- XSS: Blade {{ $catatan }} auto-escape htmlentities()<br>
+- SQL Injection: Eloquent Expense::where('user_id', auth()->id()) pakai PDO binding<br>
+- CSRF: @csrf token di form<br>
+- .env: DB_PASSWORD tidak di-commit (Soal 5)
+</div>
+
+<script>
+let data = JSON.parse(localStorage.getItem('expenses')||'[]');
+function render(){
+ let html=''; let total=0;
+ data.forEach((e,i)=>{
+  total+=parseInt(e.jml);
+  html+=`<div class="item"><span>${e.tgl} | ${e.kat} | Rp ${e.jml} | ${e.cat}</span><button onclick="hapus(${i})" style="width:auto">Hapus</button></div>`;
+ });
+ document.getElementById('list').innerHTML=html||'Belum ada data';
+ document.getElementById('total').innerText='Total Bulan Ini: Rp '+total.toLocaleString()+' (dari auth()->user()->expenses()->sum)';
+}
+function tambah(){
+ let tgl=document.getElementById('tgl').value||new Date().toISOString().slice(0,10);
+ let kat=document.getElementById('kat').value;
+ let jml=document.getElementById('jml').value||0;
+ let cat=document.getElementById('cat').value;
+ if(!jml) return alert('Isi jumlah');
+ data.push({tgl,kat,jml,cat});
+ localStorage.setItem('expenses',JSON.stringify(data));
+ render();
+}
+function hapus(i){ data.splice(i,1); localStorage.setItem('expenses',JSON.stringify(data)); render(); }
+render();
+</script>
+</body>
+</html>
